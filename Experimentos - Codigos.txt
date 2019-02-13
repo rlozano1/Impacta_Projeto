@@ -1,0 +1,133 @@
+SET ThousandSep='.';
+SET DecimalSep=',';
+SET MoneyThousandSep='.';
+SET MoneyDecimalSep=',';
+SET MoneyFormat='R$#.##0,00;-R$#.##0,00';
+SET TimeFormat='hh:mm:ss';
+SET DateFormat='DD/MM/YYYY';
+SET TimestampFormat='DD/MM/YYYY hh:mm:ss[.fff]';
+SET FirstWeekDay=6;
+SET BrokenWeeks=1;
+SET ReferenceDay=0;
+SET FirstMonthOfYear=1;
+SET CollationLocale='pt-BR';
+SET CreateSearchIndexOnReload=1;
+SET MonthNames='jan;fev;mar;abr;mai;jun;jul;ago;set;out;nov;dez';
+SET LongMonthNames='janeiro;fevereiro;março;abril;maio;junho;julho;agosto;setembro;outubro;novembro;dezembro';
+SET DayNames='seg;ter;qua;qui;sex;sáb;dom';
+SET LongDayNames='segunda-feira;terça-feira;quarta-feira;quinta-feira;sexta-feira;sábado;domingo';
+SET NumericalAbbreviation='3:k;6:M;9:G;12:T;15:P;18:E;21:Z;24:Y;-3:m;-6:μ;-9:n;-12:p;-15:f;-18:a;-21:z;-24:y';
+
+Map_Genero:
+mapping LOAD * Inline [ 
+	TP_SEXO, Genero 
+    M, Masculino, 
+    F, Feminino 
+];
+
+Operadora:
+LOAD
+    REGISTRO_ANS 			AS %CD_OPERADORA,
+    NOME_OPERADORA 			AS [Nome Operadora],
+    MODALIDADE_OPERADORA 	AS [Modalidade],
+    PORTE_OPERADORA 		AS Porte,
+    COBERTURA 				AS Cobertura,
+    ABRANGENCIA_COBERTURA 	AS [Abrangência]
+FROM [lib://Impacta-ProjetoBigDataAnalytics/Dados\CSV\Planos\dados_de_planos_de_saude.csv]
+(txt, codepage is 28591, embedded labels, delimiter is ';', msq);
+
+IPCA:
+LOAD
+    SAFRA AS %PERIODO,
+    IPCA
+FROM [lib://Impacta-ProjetoBigDataAnalytics/Dados\INFLAÇÃO\Inflacao_Serie_Historica.xlsx]
+(ooxml, embedded labels, table is [Série Histórica IPCA])
+Where ANO > 2003;
+
+Desemprego:
+LOAD
+    UF&SAFRA AS %UF_PERIODO,
+    SALDO AS [Saldo Desemprego]    
+FROM [lib://Impacta-ProjetoBigDataAnalytics/Dados\CAGED\HISTORICO_CAGED.xlsx]
+(ooxml, embedded labels, table is Plan1);
+
+[Dólar_Aux]:
+CROSSTABLE ([Mes],[Cotacao],1)
+LOAD
+	[ANO] AS [Ano],
+	[JAN],
+	[FEV],
+	[MAR],
+	[ABR],
+	[MAI],
+	[JUN],
+	[JUL],
+	[AGO],
+	[SET],
+	[OUT],
+	[NOV],
+	[DEZ]
+ FROM [lib://Dolar]
+(html, codepage is 1252, embedded labels, table is @7)
+Where ANO > 2003;
+
+NoConcatenate
+[Dólar]:
+Load 
+	Ano&Mes AS %ANOMES,
+    [Cotacao]
+Resident [Dólar_Aux];
+
+drop Table [Dólar_Aux];
+
+[Contratos]:
+LOAD
+	'Ativos' 												AS [Status Contrato],
+    CD_OPERADORA 											AS %CD_OPERADORA,
+    Year(DT_CONTRATACAO)&Date(DT_CONTRATACAO, 'MM') 		AS %PERIODO,
+    SG_UF&Year(DT_CONTRATACAO)&Date(DT_CONTRATACAO, 'MM') 	AS %UF_PERIODO,
+    Year(DT_CONTRATACAO)&Upper(month(DT_CONTRATACAO)) 		AS %ANOMES,    
+    //DT_INCLUSAO,
+    //CD_BENE_MOTV_INCLUSAO,
+    //IND_PORTABILIDADE,
+    //ID_MOTIVO_MOVIMENTO,
+    DT_NASCIMENTO AS [Data Nascimento],
+    Class(Num(('31/10/2018'-DT_NASCIMENTO)/365, '0'), 10) 	AS [Faixa Etária],
+    ApplyMap('Map_Genero', TP_SEXO, 'Não Informado') 		As Genero,
+    //TP_SEXO,
+    //NR_PLANO_PORTABILIDADE,
+    DT_CONTRATACAO AS [Data Contrato],
+    //ID_BENE_TIPO_DEPENDENTE,
+    //NM_BAIRRO,
+    //CD_MUNICIPIO,
+    SG_UF 													AS UF//,
+    //LG_RESIDE_EXTERIOR AS Flag_Reside_Exterior,
+    //DT_CANCELAMENTO
+FROM [lib://Impacta-ProjetoBigDataAnalytics/Dados\CSV\ContratoAtivos\sib_201810_AC.csv]
+(txt, codepage is 28591, embedded labels, delimiter is ';', msq)
+Where Year(DT_CONTRATACAO)>2003;
+
+Coordenadas:
+LOAD
+    UF,
+    NomeEstado AS Estado,
+    latitude,
+    longitude,
+    CoordinatesUF AS CoordenadasUF
+FROM [lib://Impacta-ProjetoBigDataAnalytics/Dados\Coordenadas-Geo\Coordenadas.txt]
+(txt, unicode, embedded labels, delimiter is '\t', msq);
+
+[autoCalendar]: 
+  DECLARE FIELD DEFINITION Tagged ('$date')
+FIELDS
+  Dual(Year($1), YearStart($1)) AS [Ano] Tagged ('$axis', '$year'),
+  Dual('Q'&Num(Ceil(Num(Month($1))/3)),Num(Ceil(NUM(Month($1))/3),00)) AS [Trimestre] Tagged ('$quarter', '$cyclic'),
+  Dual(Year($1)&'-Q'&Num(Ceil(Num(Month($1))/3)),QuarterStart($1)) AS [AnoTrimestre] Tagged ('$yearquarter', '$qualified'),
+  Dual('Q'&Num(Ceil(Num(Month($1))/3)),QuarterStart($1)) AS [_YearQuarter] Tagged ('$yearquarter', '$hidden', '$simplified'),
+  Month($1) AS [Mês] Tagged ('$month', '$cyclic'),
+  Dual(Year($1)&'-'&Month($1), monthstart($1)) AS [MesAno] Tagged ('$axis', '$yearmonth', '$qualified'),
+  Dual(Month($1), monthstart($1)) AS [_YearMonth] Tagged ('$axis', '$yearmonth', '$simplified', '$hidden'),
+  Dual('W'&Num(Week($1),00), Num(Week($1),00)) AS [Semana] Tagged ('$weeknumber', '$cyclic'),
+  Date(Floor($1)) AS [Data] Tagged ('$axis', '$date', '$qualified');
+
+DERIVE FIELDS FROM FIELDS [Data Contrato] USING [autoCalendar] ;
