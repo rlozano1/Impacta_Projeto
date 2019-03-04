@@ -1,5 +1,12 @@
 # Impacta_Projeto
 
+Este projeto contém dados de:
+  - Quantidade de Contratos de Plano de Saúde Ativos/Inativos
+  - Indice histórico da cotação do dólar
+  - Indice histórico do IPCA
+  - Saldo histórico do desemprego
+  - Quantidade de Reclamações sobre Plano de Saúde registradas no site reclameaqui
+
 Informaçōes e instruçōes de uso:
 
 O uso de todo conteúdo deve ser feito exclusivamente pelo software de BI Qlik Sense Desktop (Pré requisito Windows 64 bits).
