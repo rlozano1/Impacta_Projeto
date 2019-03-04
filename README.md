@@ -2,7 +2,7 @@
 
 Informaçōes e instruçōes de uso:
 
-O uso de todo conteúdo deve ser feito exclusivamente pelo software de BI Qlik Sense Desktop.
+O uso de todo conteúdo deve ser feito exclusivamente pelo software de BI Qlik Sense Desktop (Pré requisito Windows 64 bits).
 
 Link para download: https://da3hntz84uekx.cloudfront.net/QlikSenseDesktop/12.44/2/_MSI/Qlik_Sense_Desktop_setup.exe
 (durante a instalação, marque a opção de uso das extension do tipo Bundle)
