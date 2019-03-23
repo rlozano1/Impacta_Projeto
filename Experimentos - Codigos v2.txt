@@ -1,0 +1,216 @@
+:: PYTHON ::
+import requests
+import json
+import pandas as pd
+import os
+import csv
+
+#COLUNAS = [
+#    'Convenio',
+#    'UF',
+#    'Data']
+#df = pd.DataFrame(columns=COLUNAS)
+
+# busca o texto da página, em formato JSON e usa o método json() para converter em um dicionario Python
+headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:65.0) Gecko/20100101 Firefox/65.0',
+          'Cookies':'incap_ses_298_853231=78g3fpIz1lzhBzsPrbUiBJhVY1wAAAAAo6uBaXZE9MaoCjTS/3mrPQ==; _ga=GA1.3.16639064.1544571118; __auc=4c6c2a581679f9ce21efdccbd45; visid_incap_894601=NIIUpfVQRCWvO4TKzIG0KzVJEFwAAAAAQUIPAAAAAADDeGHBpZPnXt+YdMWrdkZf; visid_incap_853231=cS4X9soTQYCF66sKEm2MsQB3U1wAAAAAQUIPAAAAAADeNg2lJzS9u54ehsvPj33X; incap_ses_238_853231=502dGw+Ytg9j8ZjNRo1NA0tMY1wAAAAASXLAvjQ7v6l35zH5Zhk4dA==; incap_ses_169_853231=6oxUNUd9WQQUF0QG+GlYAlRTY1wAAAAAPHBviLYdVyYgWYFI1JKlVw==; incap_ses_985_853231=6FcEIfVvrXtm6Bb/42yrDRpUY1wAAAAAbO9AGRryJGlf/DmitX34fw==; ___utmvc=91VpQ1XbSeb5pup5Sjj0ofjPGvU3VmxglKehqj5uX9+7WzZ7NI/KIdB7H4kLMizbTgqcYnU/mFkmmSR3eW3MkDfI+U/9Sors+0e6xoloYbRucYnjv7r3WTrdzrHnJUcV86ZMbLiJ7dzdvGTnBfkjO5mAy7jbfXVMSiN/ws9eNJsEmJjJKXT1WbWst4F14SQn1FT1hNpTMGMmmiXKMKV1/Z6hqCiRFNxdb2QWlUHaQZG5fLHOLaxDMqAVHuaLxDknCi+D5HNkWfTAOKF+jC2Hx5MMxFo4mkFcuZNdmLXZB8uI3yC6v9ziEcuhMQqyC2z44BwGVoESXyNVMr0RCBbYTGgDC3ieZTwjTiSrtYUdcVHKu3jDhyrOKpuWqBf4ek/A5+n7OT53QFQgtk+bhg15mqlLQeFaVdmQlBg38ghFOQlM2Hh2cZm+SqA03hl0GYEYpkFjrcf4hZnlRE53IL6g4JSage4vaD00mvVG0qcJ4OEDNOoqZykpEGeHTxr6gURyOp8fU+foTD91SjgISeMKWDvCt8gxw7PMGpIAKs+5szwe1PyunfxA0VOFDyOcdDa/RnoRjgn+paFKTrmCvaVNhGv7tQ/Ur1AoPQaXMku8EShukawOHnSpUV9hkNp3NUUuAz8eRBgvqdj0Q6U0KsRBKjFp8Q8MGfRhGL14V5dbntBvFu/3AZP3KJw4rLhFJGiLtdUKECvAlbYF+cDU5VD5zGpeXY1YGaOxxKuzWbF8WeuIiKfEwkN9ubPDWTmDjgzv8NNpQn58sZuGCawxr2+LpwrzLA7VP1oFX6awIoqYDWXlbFMhqG5kKJ1bmzVnvGST+DQiyab48AV4NO32GVYVA6nR1QTrfpFhfVzGFujE72bDetMnzs2nq2f4w/uYOEWQevJw6kXEagjwBOWOPyTt8JVtfQHka1cgi2DbBlUX6TiRtDCsQxXCD/ZBJ/DqPz8xE98HFZ9lyY5PHht55OqroqpFUD1ZXkD7r06nbKdNpKrC/9SEKpStRTw5oSTMv4tDC8DmuEkXgl6aDb7DUXlvhfk21+bLBK5yOUsQSxWeSvjkGbY/Xu3tx11oPnfPIYX9TD7CRmsxkwR2N/CECvup+jUkMlYjdORNyWX6J1spmZ26lU4fRtoiUAMQy9fVc5wIv2ULOCxkaWdlc3Q9ODUyMDksODUzNTYsODU0MjMscz04MWExNjRhYTljN2VhZDgwYWM3ODdhNzM5ZjdmODBhMzdjNmM5ZGE4ODI2ZTdhODFhNmE0ODA4ODdjOGE2ZDdkYThhODk5ODA4YzgxNzY2OQ==',
+          'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+           'Upgrade-Insecure-Requests':'1',
+           'Connection':'keep-alive'
+          }
+cookies = {'incap_ses_298_853231': '78g3fpIz1lzhBzsPrbUiBJhVY1wAAAAAo6uBaXZE9MaoCjTS/3mrPQ=='}
+
+page = 10
+
+def get_data(url):
+    response = requests.get(url, headers=headers, cookies=cookies)
+    if response.status_code == 200:
+        data = response.json()
+        return data
+    else:
+        print(response.text)
+        print(response.status_code)
+
+listaParaGerarCsv = []
+arquivoOutput = './python_gerando_arquivo.csv'
+
+for i in range(2413): # qtd de páginas a percorrer
+    base_url = "https://iosearch.reclameaqui.com.br/raichu-io-site-search-v1/query/plano%20de%20sa%C3%BAde/10/"   
+    team_url = base_url + str(page)
+    data = get_data(team_url)    
+    for registro in data['complainResult']['complains']['data']:
+        df = []
+        df.append(registro['companyName'])
+        df.append(registro['userState'])
+        df.append(registro['created'])
+        listaParaGerarCsv.append(df)
+        page = page + 10
+        
+with open(arquivoOutput, 'w', newline='') as csvfile:
+    spamwriter = csv.writer(csvfile, delimiter=';', quoting=csv.QUOTE_MINIMAL)
+    spamwriter.writerow(['Convenio', 'UF', 'Data'])
+    for linha in listaParaGerarCsv:
+        spamwriter.writerow(linha),
+
+        
+print('Arquivo gerado')
+
+
+:: QLIK SENSE ::
+
+SET ThousandSep='.';
+SET DecimalSep=',';
+SET MoneyThousandSep='.';
+SET MoneyDecimalSep=',';
+SET MoneyFormat='R$#.##0,00;-R$#.##0,00';
+SET TimeFormat='hh:mm:ss';
+SET DateFormat='DD/MM/YYYY';
+SET TimestampFormat='DD/MM/YYYY hh:mm:ss[.fff]';
+SET FirstWeekDay=6;
+SET BrokenWeeks=1;
+SET ReferenceDay=0;
+SET FirstMonthOfYear=1;
+SET CollationLocale='pt-BR';
+SET CreateSearchIndexOnReload=1;
+SET MonthNames='jan;fev;mar;abr;mai;jun;jul;ago;set;out;nov;dez';
+SET LongMonthNames='janeiro;fevereiro;março;abril;maio;junho;julho;agosto;setembro;outubro;novembro;dezembro';
+SET DayNames='seg;ter;qua;qui;sex;sáb;dom';
+SET LongDayNames='segunda-feira;terça-feira;quarta-feira;quinta-feira;sexta-feira;sábado;domingo';
+SET NumericalAbbreviation='3:k;6:M;9:G;12:T;15:P;18:E;21:Z;24:Y;-3:m;-6:μ;-9:n;-12:p;-15:f;-18:a;-21:z;-24:y';
+
+Map_Genero:
+mapping LOAD * Inline [ 
+	TP_SEXO, Genero 
+    M, Masculino, 
+    F, Feminino 
+];
+
+Desemprego:
+LOAD
+    UF&SAFRA AS %UF_PERIODO,
+    SALDO AS [Saldo Desemprego]    
+FROM [lib://Impacta-ProjetoBigDataAnalytics/Dados\CAGED\HISTORICO_CAGED.xlsx]
+(ooxml, embedded labels, table is Plan1);
+
+Reclameaqui:
+LOAD
+    UF&Year(Data)&Date(Data, 'MM') AS %UF_PERIODO, 
+    Convenio AS "Convenio-Reclamação"
+FROM [lib://Impacta-ProjetoBigDataAnalytics/Dados/CSV/Reclameaqui/python_gerando_arquivo.csv]
+(txt, codepage is 28591, embedded labels, delimiter is ';', msq);
+
+Operadora:
+LOAD
+    REGISTRO_ANS 						AS %CD_OPERADORA,
+    Capitalize(NOME_OPERADORA) 			AS [Nome Operadora],
+    Capitalize(MODALIDADE_OPERADORA) 	AS [Modalidade],
+    Capitalize(PORTE_OPERADORA) 		AS Porte,
+    Capitalize(COBERTURA) 				AS Cobertura,
+    Capitalize(ABRANGENCIA_COBERTURA) 	AS [Abrangência]
+FROM [lib://Impacta-ProjetoBigDataAnalytics/Dados\CSV\Planos\dados_de_planos_de_saude.csv]
+(txt, codepage is 28591, embedded labels, delimiter is ';', msq);
+
+IPCA:
+LOAD
+    SAFRA AS %PERIODO,
+    IPCA
+FROM [lib://Impacta-ProjetoBigDataAnalytics/Dados\INFLAÇÃO\Inflacao_Serie_Historica.xlsx]
+(ooxml, embedded labels, table is [Série Histórica IPCA])
+Where ANO > 2003;
+
+[Dólar_Aux]:
+CROSSTABLE ([Mes],[Cotacao],1)
+LOAD
+	[ANO] AS [Ano],
+	[JAN],
+	[FEV],
+	[MAR],
+	[ABR],
+	[MAI],
+	[JUN],
+	[JUL],
+	[AGO],
+	[SET],
+	[OUT],
+	[NOV],
+	[DEZ]
+ FROM [lib://Dolar]
+(html, codepage is 1252, embedded labels, table is @7)
+Where ANO > 2003;
+
+NoConcatenate
+[Dólar]:
+Load 
+	Ano&Mes AS %ANOMES,
+    [Cotacao]
+Resident [Dólar_Aux];
+
+drop Table [Dólar_Aux];
+
+[Contratos]:
+LOAD
+	'Ativo' 												AS [Status Contrato],
+    CD_OPERADORA 											AS %CD_OPERADORA,
+    Year(DT_CONTRATACAO)&Date(DT_CONTRATACAO, 'MM') 		AS %PERIODO,
+    SG_UF&Year(DT_CONTRATACAO)&Date(DT_CONTRATACAO, 'MM') 	AS %UF_PERIODO,
+    Year(DT_CONTRATACAO)&Upper(month(DT_CONTRATACAO)) 		AS %ANOMES,    
+    //DT_INCLUSAO,
+    //CD_BENE_MOTV_INCLUSAO,
+    //IND_PORTABILIDADE,
+    //ID_MOTIVO_MOVIMENTO,
+    DT_NASCIMENTO AS [Data Nascimento],
+    Class(Num(('31/10/2018'-DT_NASCIMENTO)/365, '0'), 10) 	AS [Faixa Etária],
+    ApplyMap('Map_Genero', TP_SEXO, 'Não Informado') 		As Genero,
+    //TP_SEXO,
+    //NR_PLANO_PORTABILIDADE,
+    DT_CONTRATACAO AS [Data Contrato],
+    //ID_BENE_TIPO_DEPENDENTE,
+    //NM_BAIRRO,
+    //CD_MUNICIPIO,
+    SG_UF 													AS UF//,
+    //LG_RESIDE_EXTERIOR AS Flag_Reside_Exterior,
+    //DT_CANCELAMENTO
+FROM [lib://Impacta-ProjetoBigDataAnalytics/Dados\CSV\ContratosAtivos\sib_2018*.csv]
+(txt, codepage is 28591, embedded labels, delimiter is ';', msq)
+Where Year(DT_CONTRATACAO)>2003;
+
+LOAD
+	'Inativo' 												AS [Status Contrato],
+    CD_OPERADORA 											AS %CD_OPERADORA,
+    Year(DT_CONTRATACAO)&Date(DT_CONTRATACAO, 'MM') 		AS %PERIODO,
+    SG_UF&Year(DT_CONTRATACAO)&Date(DT_CONTRATACAO, 'MM') 	AS %UF_PERIODO,
+    Year(DT_CONTRATACAO)&Upper(month(DT_CONTRATACAO)) 		AS %ANOMES,    
+    DT_NASCIMENTO AS [Data Nascimento],
+    Class(Num(('31/10/2018'-DT_NASCIMENTO)/365, '0'), 10) 	AS [Faixa Etária],
+    ApplyMap('Map_Genero', TP_SEXO, 'Não Informado') 		As Genero,
+    DT_CONTRATACAO AS [Data Contrato],
+    SG_UF 													AS UF
+//FROM [lib://Impacta-ProjetoBigDataAnalytics/Dados\CSV\ContratosInativos\sib_201811_AC.csv]
+FROM [lib://Impacta-ProjetoBigDataAnalytics/Dados\CSV\ContratosInativos\sib_2018*.csv]
+(txt, codepage is 28591, embedded labels, delimiter is ';', msq)
+Where Year(DT_CONTRATACAO)>2003 and Year(DT_CONTRATACAO)<2019;
+
+Coordenadas:
+LOAD
+    UF,
+    NomeEstado AS Estado,
+    latitude,
+    longitude,
+    CoordinatesUF AS CoordenadasUF
+FROM [lib://Impacta-ProjetoBigDataAnalytics/Dados\Coordenadas-Geo\Coordenadas.txt]
+(txt, unicode, embedded labels, delimiter is '\t', msq);
+
+[autoCalendar]: 
+  DECLARE FIELD DEFINITION Tagged ('$date')
+FIELDS
+  Dual(Year($1), YearStart($1)) AS [Ano] Tagged ('$axis', '$year'),
+  Dual('Q'&Num(Ceil(Num(Month($1))/3)),Num(Ceil(NUM(Month($1))/3),00)) AS [Trimestre] Tagged ('$quarter', '$cyclic'),
+  Dual(Year($1)&'-Q'&Num(Ceil(Num(Month($1))/3)),QuarterStart($1)) AS [AnoTrimestre] Tagged ('$yearquarter', '$qualified'),
+  //Dual('Q'&Num(Ceil(Num(Month($1))/3)),QuarterStart($1)) AS [_YearQuarter] Tagged ('$yearquarter', '$hidden', '$simplified'),
+  Month($1) AS [Mês] Tagged ('$month', '$cyclic'),
+  Dual(Year($1)&'-'&Month($1), monthstart($1)) AS [MesAno] Tagged ('$axis', '$yearmonth', '$qualified'),
+  //Dual(Month($1), monthstart($1)) AS [_YearMonth] Tagged ('$axis', '$yearmonth', '$simplified', '$hidden'),
+  Dual('W'&Num(Week($1),00), Num(Week($1),00)) AS [Semana] Tagged ('$weeknumber', '$cyclic'),
+  Date(Floor($1)) AS [Data] Tagged ('$axis', '$date', '$qualified');
+
+DERIVE FIELDS FROM FIELDS [Data Contrato] USING [autoCalendar] ;
