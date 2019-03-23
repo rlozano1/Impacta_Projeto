@@ -4,7 +4,7 @@ Este projeto contém dados de:
 
 Últimos 14 anos: Quantidade de Contratos de Plano de Saúde Ativos/Inativos, Indice histórico da cotação do dólar, Indice histórico do IPCA, Saldo histórico do desemprego
 
-Últimos 2 anos: Quantidade de Reclamações sobre Plano de Saúde registradas no site reclameaqui
+Últimos 6 anos: Quantidade de Reclamações sobre Plano de Saúde registradas no site reclameaqui
 
 Última atualização do IBGE: Coordenadas com polygonos por estados do Brasil
 
