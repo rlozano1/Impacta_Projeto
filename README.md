@@ -6,7 +6,7 @@ Este projeto contém dados de:
 
 Últimos 6 anos: Quantidade de Reclamações sobre Plano de Saúde registradas no site reclameaqui
 
-Última atualização do IBGE: Coordenadas com polygonos por estados do Brasil
+Última atualização do IBGE: Coordenadas com polígonos por estados do Brasil
 
 Informaçōes e instruçōes de uso:
 
